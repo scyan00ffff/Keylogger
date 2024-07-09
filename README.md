@@ -1,4 +1,4 @@
-#Simple Python Keylogger
+Simple Python Keylogger
 
 This is a simple project i have worked on in my spare time and is in no means meant to be the most bulletproof soloution available. I have uploaded the code to GitHub as a means of creating a portfolio and 
 it goes without saying that this application should only be run on a device you have explicit permission to do so on. 
